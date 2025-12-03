@@ -260,7 +260,7 @@ GTHackathon/
 │   └── coupons.csv
 │
 ├── docs/                     # RAG documents
-│   └── policy.txt
+│   └── policy.txt and other required files
 │
 ├── screenshots/
 │
@@ -275,7 +275,7 @@ GTHackathon/
 │   ├── config.py
 │   └── llm_orchestrator.py
 │
-├── templates/
+├── static/
 │   └── index.html            # Chat UI
 │
 ├── config.yaml
@@ -299,3 +299,4 @@ GTHackathon/
 
 **Pranav Akella** — Built for GTHackathon 2025  
 **Track:** H-002 | Customer Experience & Conversational AI
+
