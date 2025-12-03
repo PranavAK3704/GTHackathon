@@ -1,0 +1,20 @@
+﻿data:
+  customers: "data/customers.csv"
+  orders: "data/orders.csv"
+  stores: "data/stores.csv"
+  coupons: "data/coupons.csv"
+
+llm:
+  provider: "template"
+  model: "gpt-4o-mini"
+  max_tokens: 400
+
+rag:
+  enabled: false
+  docs_path: "docs"
+  top_k: 3
+
+privacy:
+  mask_phone: true
+  mask_email: true
+  mask_exact_address: true

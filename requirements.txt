@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pandas
+pyyaml
+python-dateutil
+pydantic
+
+# Optional (we will use in later phases)
+sentence-transformers
+faiss-cpu
+openai
