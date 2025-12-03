@@ -5,7 +5,13 @@ pyyaml
 python-dateutil
 pydantic
 
-# Optional (we will use in later phases)
+# LLM
+groq
+
+# RAG
 sentence-transformers
 faiss-cpu
-openai
+pypdf
+
+# Data generation
+numpy

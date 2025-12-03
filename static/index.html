@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PulseCX Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white flex justify-center items-start min-h-screen p-6">
+
+  <div class="w-full max-w-2xl bg-gray-800 rounded-xl shadow-xl p-6 mt-10">
+
+    <h1 class="text-2xl font-bold mb-4">PulseCX Assistant</h1>
+
+    <div id="chat-box" class="bg-gray-700 rounded-lg p-4 h-96 overflow-y-auto mb-4">
+      <!-- Chat bubbles will appear here -->
+    </div>
+
+    <div class="flex gap-2">
+      <input
+        id="message"
+        class="flex-1 p-3 bg-gray-600 rounded-lg outline-none"
+        type="text"
+        placeholder="Type your message..."
+      />
+
+      <button
+        onclick="sendMessage()"
+        class="bg-blue-500 px-4 rounded-lg hover:bg-blue-600"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+
+    function addMessage(sender, text) {
+      const bubble = document.createElement("div");
+      bubble.className =
+        sender === "user"
+          ? "text-right mb-3"
+          : "text-left mb-3";
+
+      bubble.innerHTML = `
+        <div class="${sender === "user"
+          ? "inline-block bg-blue-600 px-4 py-2 rounded-xl"
+          : "inline-block bg-gray-600 px-4 py-2 rounded-xl"
+        }">
+          ${text}
+        </div>
+      `;
+
+      chatBox.appendChild(bubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const msg = document.getElementById("message").value;
+      if (!msg.trim()) return;
+
+      addMessage("user", msg);
+      document.getElementById("message").value = "";
+
+      // **Get GPS location**
+      let lat = 0, lon = 0;
+      try {
+        const pos = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject)
+        );
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+      } catch (err) {
+        lat = 12.9716; // fallback: BLR coords
+        lon = 77.5946;
+      }
+
+      addMessage("bot", "Thinking...");
+
+      // **Send to backend**
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          user_id: "U000001",
+          message: msg,
+          location: { lat, lon }
+        })
+      });
+
+      const data = await res.json();
+      chatBox.lastChild.remove(); // remove "Thinking..."
+
+      if (data.reply) {
+        addMessage("bot", data.reply);
+      } else {
+        addMessage("bot", "⚠️ Error: Backend did not respond correctly.");
+      }
+    }
+  </script>
+
+</body>
+</html>

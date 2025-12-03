@@ -1,0 +1,2 @@
+Stores maintain indoor temperature between 22–25°C.
+During extreme weather, stores may operate with reduced hours.

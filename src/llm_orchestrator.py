@@ -1,6 +1,14 @@
 from typing import Any, Dict, List
+import os
 
 from .privacy import mask_text
+
+TEMPLATE_FALLBACK = (
+    "Thanks for reaching out! Based on your profile and recent visits, the nearest "
+    "open store is ready to serve you, and we have at least one active coupon on "
+    "your account. Please head to the suggested store and show this message at the "
+    "counter to redeem your offer."
+)
 
 
 def build_prompt(context: Dict[str, Any], user_message: str, rag_snippets: List[str]) -> str:
@@ -28,29 +36,58 @@ def build_prompt(context: Dict[str, Any], user_message: str, rag_snippets: List[
     return prompt
 
 
+def _call_groq(prompt: str, llm_cfg: Dict[str, Any]) -> str:
+    """
+    Call Groq chat completions API. Requires:
+      - pip install groq
+      - environment variable GROQ_API_KEY
+    """
+    try:
+        from groq import Groq  # type: ignore
+    except Exception:
+        # Library not installed – fall back
+        return TEMPLATE_FALLBACK
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        # No key in env – fall back
+        return TEMPLATE_FALLBACK
+
+    client = Groq(api_key=api_key)
+
+    model = llm_cfg.get("model", "llama-3.3-70b-versatile")
+
+    try:
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are PulseCX, a helpful, precise retail assistant. "
+                        "Always ground your answers in the given context."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=llm_cfg.get("max_tokens", 400),
+        )
+        return completion.choices[0].message.content  # type: ignore[index]
+    except Exception:
+        # Any Groq API error – silently fall back for demo stability
+        return TEMPLATE_FALLBACK
+
+
 def call_llm(prompt: str, llm_cfg: Dict[str, Any]) -> str:
     """
-    For now, return a template answer so the system runs even without an API key.
-    Later we can plug in OpenAI or Gemini here.
+    Dispatch to the correct LLM provider. Currently supports:
+      - provider: "groq"
+      - provider: "template" (fallback)
     """
-    provider = llm_cfg.get("provider", "template")
+    provider = llm_cfg.get("provider", "template").lower()
 
-    if provider == "openai":
-        # Example wiring (commented to keep project self-contained):
-        # from openai import OpenAI
-        # import os
-        # client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        # resp = client.chat.completions.create(
-        #     model=llm_cfg.get("model", "gpt-4o-mini"),
-        #     messages=[{"role": "user", "content": prompt}],
-        #     max_tokens=llm_cfg.get("max_tokens", 400),
-        # )
-        # return resp.choices[0].message.content
-        pass
+    if provider == "groq":
+        return _call_groq(prompt, llm_cfg)
 
-    # Fallback – deterministic template that still uses the idea of personalization
-    return (
-        "Thanks for reaching out! Based on your profile and recent visits, the nearest open "
-        "store is ready to serve you, and we have at least one active coupon on your account. "
-        "Please head to the suggested store and show this message at the counter to redeem your offer."
-    )
+    # Default: deterministic template answer so the project runs offline
+    return TEMPLATE_FALLBACK
